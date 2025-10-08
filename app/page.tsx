@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import dynamic from "next/dynamic";
+import Image from "next/image";
 import LoadingScreen from "./components/LoadingScreen";
 import { mockToilets } from "./data/mockToilets";
 
@@ -30,7 +31,7 @@ export default function Home() {
       {/* 헤더 */}
       <header className="bg-gradient-to-r from-blue-500 to-blue-700 text-white p-4 shadow-lg">
         <div className="container mx-auto flex items-center gap-4">
-          <img src="/icon.png" alt="화슐랭 가이드" className="w-12 h-12" />
+          <Image src="/icon.png" alt="화슐랭 가이드" width={48} height={48} />
           <div>
             <h1 className="text-2xl font-bold">화슐랭 가이드</h1>
             <p className="text-sm text-blue-100">주변의 공공 화장실을 찾아드립니다</p>

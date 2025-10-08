@@ -1,12 +1,12 @@
 "use client";
 
-import { useEffect } from "react";
 import { MapContainer, TileLayer, Marker, Popup } from "react-leaflet";
 import "leaflet/dist/leaflet.css";
 import L from "leaflet";
 import { Toilet } from "../data/mockToilets";
 
 // Leaflet 기본 아이콘 수정 (Next.js에서 아이콘 경로 문제 해결)
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 delete (L.Icon.Default.prototype as any)._getIconUrl;
 L.Icon.Default.mergeOptions({
   iconRetinaUrl:
