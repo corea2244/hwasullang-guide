@@ -4,7 +4,7 @@ import { useState, useEffect } from "react";
 import dynamic from "next/dynamic";
 import Image from "next/image";
 import LoadingScreen from "./components/LoadingScreen";
-import { Toilet, ToiletApiResponse, transformToiletData } from "./data/toiletTypes";
+import { UnifiedToilet } from "./data/toiletModel";
 
 const LeafletMap = dynamic(() => import("./components/LeafletMap"), {
   ssr: false,
@@ -13,30 +13,24 @@ const LeafletMap = dynamic(() => import("./components/LeafletMap"), {
 
 export default function Home() {
   const [isLoading, setIsLoading] = useState(true);
-  const [toilets, setToilets] = useState<Toilet[]>([]);
+  const [toilets, setToilets] = useState<UnifiedToilet[]>([]);
   const [error, setError] = useState<string | null>(null);
+  const [dataSources, setDataSources] = useState<{ api: number; json: number }>({ api: 0, json: 0 });
 
   useEffect(() => {
     async function fetchToilets() {
       try {
-        const response = await fetch('/api/toilets?page=1&size=1000');
+        const response = await fetch('/api/toilets');
 
         if (!response.ok) {
           throw new Error('화장실 데이터를 불러오는데 실패했습니다.');
         }
 
-        const data: ToiletApiResponse = await response.json();
+        const data = await response.json();
 
-        // API 응답 구조 확인 (head는 [0], row는 [1]에 위치)
-        if (data.Publtolt && data.Publtolt[1] && data.Publtolt[1].row) {
-          const rawToilets = data.Publtolt[1].row;
-
-          // 데이터 변환 및 필터링 (유효한 좌표만)
-          const transformedToilets = rawToilets
-            .map((raw, index) => transformToiletData(raw, index))
-            .filter((toilet): toilet is Toilet => toilet !== null);
-
-          setToilets(transformedToilets);
+        if (data.toilets && Array.isArray(data.toilets)) {
+          setToilets(data.toilets);
+          setDataSources(data.sources || { api: 0, json: 0 });
         } else {
           throw new Error('API 응답 형식이 올바르지 않습니다.');
         }
@@ -80,7 +74,7 @@ export default function Home() {
           <Image src="/icon.png" alt="화슐랭 가이드" width={48} height={48} />
           <div>
             <h1 className="text-2xl font-bold">화슐랭 가이드</h1>
-            <p className="text-sm text-blue-100">경기도 공공 화장실을 찾아드립니다</p>
+            <p className="text-sm text-blue-100">전국 공공 화장실을 찾아드립니다</p>
           </div>
         </div>
       </header>
@@ -94,9 +88,14 @@ export default function Home() {
       <footer className="bg-white border-t p-4 shadow-lg">
         <div className="container mx-auto">
           <div className="flex items-center justify-between">
-            <p className="text-sm text-gray-600">
-              총 <span className="font-bold text-blue-600">{toilets.length}</span>개의 공공 화장실
-            </p>
+            <div>
+              <p className="text-sm text-gray-600">
+                총 <span className="font-bold text-blue-600">{toilets.length.toLocaleString()}</span>개의 공공 화장실
+              </p>
+              <p className="text-xs text-gray-400 mt-1">
+                경기도 {dataSources.api.toLocaleString()}개 (실시간) · 기타 지역 {dataSources.json.toLocaleString()}개
+              </p>
+            </div>
             <p className="text-xs text-gray-500">
               마커를 클릭하여 상세 정보를 확인하세요
             </p>

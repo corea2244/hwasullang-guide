@@ -1,27 +1,49 @@
 import { NextResponse } from 'next/server';
+import { getUnifiedToilets, getToiletsByRegion, getToiletById } from '@/app/data/toiletService';
 
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
-  const page = searchParams.get('page') || '1';
-  const size = searchParams.get('size') || '1000';
-
-  const API_KEY = process.env.NEXT_PUBLIC_GG_API_KEY || 'ce2811ac642b43328d0eaf910005f933';
-  const API_URL = `https://openapi.gg.go.kr/Publtolt?KEY=${API_KEY}&Type=json&pIndex=${page}&pSize=${size}`;
+  const region = searchParams.get('region'); // 특정 지역 필터
+  const id = searchParams.get('id'); // 특정 화장실 ID
 
   try {
-    const response = await fetch(API_URL);
-
-    if (!response.ok) {
-      throw new Error(`API 요청 실패: ${response.status}`);
+    // ID로 특정 화장실 조회
+    if (id) {
+      const toilet = await getToiletById(id);
+      if (!toilet) {
+        return NextResponse.json(
+          { error: '화장실을 찾을 수 없습니다.' },
+          { status: 404 }
+        );
+      }
+      return NextResponse.json(toilet);
     }
 
-    const data = await response.json();
+    // 지역별 조회
+    if (region) {
+      const toilets = await getToiletsByRegion(region);
+      return NextResponse.json({
+        total: toilets.length,
+        region,
+        toilets,
+      });
+    }
 
-    return NextResponse.json(data);
+    // 전체 조회 (통합 데이터: 경기도=API, 기타=JSON)
+    const toilets = await getUnifiedToilets();
+
+    return NextResponse.json({
+      total: toilets.length,
+      toilets,
+      sources: {
+        api: toilets.filter(t => t.metadata.dataSource === 'api').length,
+        json: toilets.filter(t => t.metadata.dataSource === 'json').length,
+      }
+    });
   } catch (error) {
-    console.error('공중화장실 API 요청 에러:', error);
+    console.error('화장실 데이터 로드 에러:', error);
     return NextResponse.json(
-      { error: '공중화장실 데이터를 가져오는데 실패했습니다.' },
+      { error: '화장실 데이터를 가져오는데 실패했습니다.' },
       { status: 500 }
     );
   }

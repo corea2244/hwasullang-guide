@@ -3,7 +3,7 @@
 import { MapContainer, TileLayer, Marker, Popup } from "react-leaflet";
 import "leaflet/dist/leaflet.css";
 import L from "leaflet";
-import { Toilet } from "../data/toiletTypes";
+import { UnifiedToilet } from "../data/toiletModel";
 
 // Leaflet 기본 아이콘 수정 (Next.js에서 아이콘 경로 문제 해결)
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -18,7 +18,7 @@ L.Icon.Default.mergeOptions({
 });
 
 interface LeafletMapProps {
-  toilets: Toilet[];
+  toilets: UnifiedToilet[];
 }
 
 export default function LeafletMap({ toilets }: LeafletMapProps) {
@@ -33,35 +33,48 @@ export default function LeafletMap({ toilets }: LeafletMapProps) {
         url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
       />
       {toilets.map((toilet) => (
-        <Marker key={toilet.id} position={[toilet.lat, toilet.lng]}>
+        <Marker key={toilet.id} position={[toilet.location.lat, toilet.location.lng]}>
           <Popup>
-            <div style={{ minWidth: "200px" }}>
+            <div style={{ minWidth: "220px" }}>
               <h3 style={{ fontWeight: "bold", marginBottom: "8px", fontSize: "14px" }}>
                 {toilet.name}
               </h3>
               <p style={{ fontSize: "12px", color: "#666", marginBottom: "8px" }}>
-                📍 {toilet.roadAddress || toilet.address}
+                📍 {toilet.location.roadAddress || toilet.location.lotAddress}
               </p>
-              {(toilet.maleToilets || toilet.femaleToilets) && (
+              {(toilet.facilities.male.toilets || toilet.facilities.female.toilets) && (
                 <div style={{ fontSize: "11px", color: "#444", marginBottom: "4px" }}>
-                  🚻 남: {toilet.maleToilets || 0}칸 / 여: {toilet.femaleToilets || 0}칸
+                  🚻 남: {toilet.facilities.male.toilets}칸 / 여: {toilet.facilities.female.toilets}칸
                 </div>
               )}
-              {(toilet.disabledMaleToilets || toilet.disabledFemaleToilets) && (
+              {(toilet.facilities.male.disabledToilets || toilet.facilities.female.disabledToilets) && (
                 <div style={{ fontSize: "11px", color: "#2563eb", marginBottom: "4px" }}>
                   ♿ 장애인용 시설 있음
                 </div>
               )}
-              {toilet.phone && (
+              {toilet.safety?.hasDiaperChangingStation && (
+                <div style={{ fontSize: "11px", color: "#10b981", marginBottom: "4px" }}>
+                  👶 기저귀 교환대 있음
+                </div>
+              )}
+              {toilet.operation?.openingHoursDetail && (
+                <div style={{ fontSize: "11px", color: "#f59e0b", marginBottom: "4px" }}>
+                  🕐 {toilet.operation.openingHoursDetail}
+                </div>
+              )}
+              {toilet.management.phone && (
                 <div style={{ fontSize: "11px", color: "#666", marginTop: "6px" }}>
-                  📞 {toilet.phone}
+                  📞 {toilet.management.phone}
                 </div>
               )}
-              {toilet.manageOrg && (
+              {toilet.management.organization && (
                 <div style={{ fontSize: "10px", color: "#999", marginTop: "4px" }}>
-                  관리: {toilet.manageOrg}
+                  관리: {toilet.management.organization}
                 </div>
               )}
+              <div style={{ fontSize: "9px", color: "#bbb", marginTop: "6px", borderTop: "1px solid #eee", paddingTop: "4px" }}>
+                {toilet.metadata.dataSource === 'api' ? '🔄 실시간 (경기도)' : '📦 정적 데이터'}
+              </div>
             </div>
           </Popup>
         </Marker>
